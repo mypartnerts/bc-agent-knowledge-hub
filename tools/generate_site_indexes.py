@@ -72,6 +72,47 @@ def write_folder_index(folder: Path) -> None:
     lines.extend(["", "[Back to the Knowledge Hub](../index.md)", ""])
     index.write_text("\n".join(lines), encoding="utf-8")
 
+def strip_front_matter(text: str) -> str:
+    if not has_front_matter(text):
+        return text
+    parts = text.split("---", 2)
+    return parts[2].lstrip() if len(parts) == 3 else text
+
+def write_consolidated_knowledge() -> None:
+    candidates = []
+    agents = ROOT / "AGENTS.md"
+    if agents.exists():
+        candidates.append(agents)
+    for name in INDEXED_DIRS:
+        folder = ROOT / name
+        if folder.is_dir():
+            candidates.extend(p for p in markdown_files(folder) if p.name.lower() != "index.md")
+
+    lines = [
+        "---",
+        "layout: default",
+        'title: "Complete Business Central Agent Knowledge"',
+        'description: "Single crawlable page containing agent routing, domains, evidence policies and source catalogs."',
+        "---",
+        "",
+        "# Complete Business Central Agent Knowledge",
+        "",
+        "This single page consolidates the complete routing catalog for knowledge systems that retrieve only the configured public URL or do not follow nested links.",
+        "",
+    ]
+    for path in candidates:
+        rel = path.relative_to(ROOT).as_posix()
+        content = strip_front_matter(path.read_text(encoding="utf-8")).strip()
+        lines.extend([
+            "---",
+            "",
+            f"## Source document: `{rel}`",
+            "",
+            content,
+            "",
+        ])
+    (ROOT / "knowledge-all.md").write_text("\n".join(lines), encoding="utf-8")
+
 def write_root_index() -> None:
     agents = ROOT / "AGENTS.md"
     lines = [
@@ -97,6 +138,10 @@ def write_root_index() -> None:
         "3. Open the relevant [Domain catalog](domains/).",
         "4. Apply the required [Evidence policies](policies/).",
         "5. Select the necessary [Source catalog](sources/).",
+        "",
+        "## Complete consolidated knowledge",
+        "",
+        "- [Open the complete routing, domain, policy and source catalog on one page](knowledge-all.md).",
         "",
         "## Complete crawlable catalog",
         "",
@@ -161,6 +206,7 @@ def main():
         if folder.is_dir():
             write_folder_index(folder)
 
+    write_consolidated_knowledge()
     write_root_index()
 
     changed = 0
@@ -172,7 +218,7 @@ def main():
     write_robots_and_sitemap()
 
     print(f"Patch applied. Added front matter to {changed} Markdown files.")
-    print("Generated: index.md, section indexes, robots.txt and sitemap.xml")
+    print("Generated: index.md, knowledge-all.md, section indexes, robots.txt and sitemap.xml")
     print("Next: review 'git diff', commit, push, wait for Pages deployment, then re-add or refresh the Copilot Studio knowledge source.")
 
 if __name__ == "__main__":
