@@ -93,6 +93,7 @@ def write_consolidated_knowledge() -> None:
         "layout: default",
         'title: "Complete Business Central Agent Knowledge"',
         'description: "Single crawlable page containing agent routing, domains, evidence policies and source catalogs."',
+        'permalink: /knowledge-all/',
         "---",
         "",
         "# Complete Business Central Agent Knowledge",
